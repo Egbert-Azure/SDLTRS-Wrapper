@@ -17,6 +17,9 @@ follows [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
   9 sec for the Genie IIIs); display-only, as sdltrs reads real geometry
   from the `.hdv`.
 - App version now shown in the window header.
+- Installed sdltrs version shown next to the sdltrs path, read from a
+  `sdltrs-version.txt` that `update-sdltrs.sh` writes at install time
+  (the source commit hash + date, since sdltrs has no `--version` flag).
 - `update-sdltrs.sh` — on-demand script to pull and rebuild sdltrs from
   GitLab and install the binary where the launcher expects it (GPLv3).
   Verified building cleanly on Apple Silicon with Homebrew SDL2.
