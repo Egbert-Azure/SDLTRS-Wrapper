@@ -17,9 +17,9 @@
 //
 // ---------------------------------------------------------------------------
 //
-// Gives you a real Cocoa window: four drag-and-drop floppy slots, a model
-// picker, optional .t8c config and ROM selection, then launches sdltrs
-// underneath with the right command line.
+// Gives you a real Cocoa window: machine presets, four drag-and-drop floppy
+// slots, four hard-disk slots, model / ROM / config / charset controls, then
+// launches sdltrs underneath with the right command line.
 //
 // Build (in a VS Code terminal on macOS):
 //   ./build.sh
@@ -29,52 +29,110 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 
+// MARK: - Version
+
+// Single source of truth for the app version. Keep in sync with the
+// CFBundleShortVersionString in Info.plist.
+let appVersion = "1.1"
+
+// MARK: - Machine presets
+
+// A preset bundles the model number, an optional ROM hint, whether the
+// Genie/German character set applies, and the expected hard-disk geometry
+// (display-only — sdltrs reads real geometry from the .hdv itself).
+struct Machine: Identifiable, Hashable {
+    let id: String
+    let label: String
+    let model: Int
+    let usesGenieCharset: Bool
+    let geometry: String?   // e.g. "2460 cyl · 4 heads · 9 sec", or nil
+
+    static let all: [Machine] = [
+        Machine(id: "model1",  label: "Model I · HRG1-B",
+                model: 1, usesGenieCharset: false, geometry: nil),
+        Machine(id: "model3",  label: "Model III",
+                model: 3, usesGenieCharset: false, geometry: nil),
+        Machine(id: "model4",  label: "Model 4",
+                model: 4, usesGenieCharset: false, geometry: nil),
+        Machine(id: "model4p", label: "Model 4P",
+                model: 5, usesGenieCharset: false, geometry: nil),
+        Machine(id: "genie3s", label: "TCS Genie IIIs",
+                model: 3, usesGenieCharset: true,
+                geometry: "2460 cyl · 4 heads · 9 sec"),
+    ]
+
+    static func by(id: String) -> Machine {
+        all.first { $0.id == id } ?? all[0]
+    }
+}
+
 // MARK: - Persistent settings
 
 final class Settings: ObservableObject {
-    // Path to the sdl2trs binary or .app. The SDL2 fork's binary is
-    // typically named "sdl2trs64"; adjust via the Locate… button.
+    // Path to the sdltrs / sdl2trs binary or .app. Adjust via Locate….
     @AppStorage("sdltrsPath") var sdltrsPath: String =
         "/Applications/sdltrs/sdltrs.app"
     @AppStorage("configPath") var configPath: String = ""
     @AppStorage("romPath") var romPath: String = ""
-    @AppStorage("model") var model: Int = 1
+    @AppStorage("machineID") var machineID: String = "model1"
     @AppStorage("genieCharset") var genieCharset: Bool = false
-    // Disk slots persisted as newline-joined paths.
+    // Drive slots persisted as newline-joined paths (4 each).
     @AppStorage("disksJoined") var disksJoined: String = "\n\n\n"
+    @AppStorage("hardsJoined") var hardsJoined: String = "\n\n\n"
+
+    private func four(_ joined: String) -> [String] {
+        var parts = joined.components(separatedBy: "\n")
+        while parts.count < 4 { parts.append("") }
+        return Array(parts.prefix(4))
+    }
 
     var disks: [String] {
-        get {
-            var parts = disksJoined.components(separatedBy: "\n")
-            while parts.count < 4 { parts.append("") }
-            return Array(parts.prefix(4))
-        }
+        get { four(disksJoined) }
         set { disksJoined = newValue.prefix(4).joined(separator: "\n") }
+    }
+    var hards: [String] {
+        get { four(hardsJoined) }
+        set { hardsJoined = newValue.prefix(4).joined(separator: "\n") }
+    }
+
+    var machine: Machine { Machine.by(id: machineID) }
+}
+
+// MARK: - One drive slot (floppy or hard disk)
+
+enum DriveKind {
+    case floppy, hard
+    var label: String { self == .floppy ? "Drive" : "Hard" }
+    var emptyIcon: String {
+        self == .floppy ? "opticaldiscdrive" : "internaldrive"
+    }
+    var filledIcon: String {
+        self == .floppy ? "opticaldiscdrive.fill" : "internaldrive.fill"
+    }
+    var fileTypes: [String] {
+        self == .floppy ? ["dmk", "dsk", "jv1", "jv3"] : ["hdv", "dsk"]
     }
 }
 
-// MARK: - One floppy slot
-
-struct DiskSlot: View {
+struct DriveSlot: View {
+    let kind: DriveKind
     let index: Int
     @Binding var path: String
     @State private var hovering = false
 
     private var filename: String {
-        path.isEmpty ? "— empty —"
-                     : (path as NSString).lastPathComponent
+        path.isEmpty ? "— empty —" : (path as NSString).lastPathComponent
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: path.isEmpty ? "opticaldiscdrive"
-                                           : "opticaldiscdrive.fill")
+            Image(systemName: path.isEmpty ? kind.emptyIcon : kind.filledIcon)
                 .font(.system(size: 22))
                 .foregroundStyle(path.isEmpty ? .secondary : .primary)
                 .frame(width: 30)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Drive \(index)")
+                Text("\(kind.label) \(index)")
                     .font(.caption).foregroundStyle(.secondary)
                 Text(filename)
                     .font(.system(.body, design: .monospaced))
@@ -83,7 +141,7 @@ struct DiskSlot: View {
             Spacer()
 
             Button { choose() } label: { Image(systemName: "folder") }
-                .buttonStyle(.borderless).help("Choose a disk image…")
+                .buttonStyle(.borderless).help("Choose an image…")
 
             Button { path = "" } label: { Image(systemName: "eject") }
                 .buttonStyle(.borderless).help("Eject")
@@ -111,16 +169,10 @@ struct DiskSlot: View {
 
     private func choose() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [
-            UTType(filenameExtension: "dmk"),
-            UTType(filenameExtension: "dsk"),
-            UTType(filenameExtension: "jv1"),
-            UTType(filenameExtension: "jv3"),
-        ].compactMap { $0 }
+        panel.allowedContentTypes = kind.fileTypes
+            .compactMap { UTType(filenameExtension: $0) }
         panel.allowsOtherFileTypes = true
-        if panel.runModal() == .OK, let url = panel.url {
-            path = url.path
-        }
+        if panel.runModal() == .OK, let url = panel.url { path = url.path }
     }
 }
 
@@ -129,66 +181,104 @@ struct DiskSlot: View {
 struct ContentView: View {
     @StateObject private var s = Settings()
     @State private var disks: [String] = ["", "", "", ""]
+    @State private var hards: [String] = ["", "", "", ""]
     @State private var status = ""
 
+    private var machine: Machine { s.machine }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "desktopcomputer")
-                    .font(.system(size: 26))
-                VStack(alignment: .leading) {
-                    Text("TRS-80 Launcher").font(.title2.bold())
-                    Text("Model I · HRG1-B graphics")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
-                Spacer()
-                Picker("Model", selection: $s.model) {
-                    Text("Model I").tag(1)
-                    Text("Model III").tag(3)
-                    Text("Model 4").tag(4)
-                    Text("Model 4P").tag(5)
-                }
-                .pickerStyle(.menu).frame(width: 140)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                header
+                Divider()
+                floppySection
+                Divider()
+                hardSection
+                Divider()
+                settingsSection
+                Divider()
+                footer
             }
+            .padding(20)
+            .frame(width: 480)
+        }
+        .frame(width: 480, height: 760)
+        .onAppear {
+            disks = s.disks
+            hards = s.hards
+        }
+    }
 
-            Divider()
+    private var header: some View {
+        HStack {
+            Image(systemName: "desktopcomputer").font(.system(size: 26))
+            VStack(alignment: .leading) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text("TRS-80 Launcher").font(.title2.bold())
+                    Text("v\(appVersion)")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+                Text(machine.label)
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Picker("Machine", selection: $s.machineID) {
+                ForEach(Machine.all) { m in
+                    Text(m.label).tag(m.id)
+                }
+            }
+            .pickerStyle(.menu).frame(width: 180)
+            .onChange(of: s.machineID) { applyPreset() }
+        }
+    }
 
+    private var floppySection: some View {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Floppy drives").font(.headline)
             ForEach(0..<4, id: \.self) { i in
-                DiskSlot(index: i, path: Binding(
+                DriveSlot(kind: .floppy, index: i, path: Binding(
                     get: { disks[i] },
                     set: { disks[i] = $0; s.disks = disks }
                 ))
             }
+        }
+    }
 
-            Divider()
-
-            // Config + sdltrs path
+    private var hardSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Config (.t8c)").frame(width: 90, alignment: .leading)
-                Text(s.configPath.isEmpty ? "none"
-                     : (s.configPath as NSString).lastPathComponent)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1).truncationMode(.middle)
+                Text("Hard disks").font(.headline)
                 Spacer()
-                Button("Choose…") { pickConfig() }
-                Button("Clear") { s.configPath = "" }
-                    .disabled(s.configPath.isEmpty)
+                if let g = machine.geometry {
+                    Text(g)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
             }
+            ForEach(0..<2, id: \.self) { i in
+                DriveSlot(kind: .hard, index: i, path: Binding(
+                    get: { hards[i] },
+                    set: { hards[i] = $0; s.hards = hards }
+                ))
+            }
+        }
+    }
 
-            HStack {
-                Text("ROM").frame(width: 90, alignment: .leading)
-                Text(s.romPath.isEmpty ? "default"
-                     : (s.romPath as NSString).lastPathComponent)
-                    .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1).truncationMode(.middle)
-                Spacer()
-                Button("Choose…") { pickRom() }
-                Button("Clear") { s.romPath = "" }
-                    .disabled(s.romPath.isEmpty)
-            }
+    private var settingsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            row(label: "Config (.t8c)",
+                value: s.configPath.isEmpty ? "none"
+                    : (s.configPath as NSString).lastPathComponent,
+                choose: pickConfig,
+                clear: { s.configPath = "" },
+                clearDisabled: s.configPath.isEmpty)
+
+            row(label: "ROM",
+                value: s.romPath.isEmpty ? "default"
+                    : (s.romPath as NSString).lastPathComponent,
+                choose: pickRom,
+                clear: { s.romPath = "" },
+                clearDisabled: s.romPath.isEmpty)
 
             Toggle("German / Genie character set (-charset1 genie)",
                    isOn: $s.genieCharset)
@@ -203,25 +293,41 @@ struct ContentView: View {
                 Spacer()
                 Button("Locate…") { pickSdltrs() }
             }
-
-            Divider()
-
-            HStack {
-                Text(status).font(.caption).foregroundStyle(.secondary)
-                Spacer()
-                Button {
-                    launch()
-                } label: {
-                    Label("Boot", systemImage: "play.fill")
-                        .frame(minWidth: 80)
-                }
-                .keyboardShortcut(.return, modifiers: [])
-                .buttonStyle(.borderedProminent)
-            }
         }
-        .padding(20)
-        .frame(width: 460)
-        .onAppear { disks = s.disks }
+    }
+
+    private func row(label: String, value: String,
+                     choose: @escaping () -> Void,
+                     clear: @escaping () -> Void,
+                     clearDisabled: Bool) -> some View {
+        HStack {
+            Text(label).frame(width: 90, alignment: .leading)
+            Text(value)
+                .font(.system(.caption, design: .monospaced))
+                .foregroundStyle(.secondary)
+                .lineLimit(1).truncationMode(.middle)
+            Spacer()
+            Button("Choose…", action: choose)
+            Button("Clear", action: clear).disabled(clearDisabled)
+        }
+    }
+
+    private var footer: some View {
+        HStack {
+            Text(status).font(.caption).foregroundStyle(.secondary)
+            Spacer()
+            Button { launch() } label: {
+                Label("Boot", systemImage: "play.fill").frame(minWidth: 80)
+            }
+            .keyboardShortcut(.return, modifiers: [])
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    // Picking a preset sets the charset default. Model is derived from the
+    // preset at launch time; ROM is left alone (user-specific file path).
+    private func applyPreset() {
+        s.genieCharset = machine.usesGenieCharset
     }
 
     private func pickConfig() {
@@ -233,18 +339,15 @@ struct ContentView: View {
 
     private func pickRom() {
         let panel = NSOpenPanel()
-        panel.allowedContentTypes = [
-            UTType(filenameExtension: "bin"),
-            UTType(filenameExtension: "rom"),
-            UTType(filenameExtension: "hex"),
-        ].compactMap { $0 }
+        panel.allowedContentTypes = ["bin", "rom", "hex"]
+            .compactMap { UTType(filenameExtension: $0) }
         panel.allowsOtherFileTypes = true
         if panel.runModal() == .OK, let url = panel.url { s.romPath = url.path }
     }
 
     private func pickSdltrs() {
         let panel = NSOpenPanel()
-        // Allow both .app bundles and bare Unix executables (e.g. sdltrs /
+        // Allow both .app bundles and bare Unix executables (sdltrs /
         // sdl2trs64). No content-type filter, so nothing is greyed out.
         panel.canChooseDirectories = true
         panel.canChooseFiles = true
@@ -252,45 +355,43 @@ struct ContentView: View {
         if panel.runModal() == .OK, let url = panel.url { s.sdltrsPath = url.path }
     }
 
-    // Build the command line and launch sdltrs via `open --args`.
+    // Build the command line and launch sdltrs.
     private func launch() {
         var args = ["--args"]
 
         // Config file first if present (loaded before startup).
         if !s.configPath.isEmpty { args.append(s.configPath) }
 
-        args.append("-model\(s.model)")
+        args.append("-model\(machine.model)")
 
         if !s.romPath.isEmpty {
-            args.append("-rom")
-            args.append(s.romPath)
+            args.append("-rom"); args.append(s.romPath)
         }
-
         if s.genieCharset {
-            args.append("-charset1")
-            args.append("genie")
+            args.append("-charset1"); args.append("genie")
         }
 
-        var anyDisk = false
+        var anyFloppy = false
         for (i, disk) in disks.enumerated() where !disk.isEmpty {
-            args.append("-disk\(i)")
-            args.append(disk)
-            anyDisk = true
+            args.append("-disk\(i)"); args.append(disk)
+            anyFloppy = true
+        }
+        for (i, hd) in hards.enumerated() where !hd.isEmpty {
+            args.append("-hard\(i)"); args.append(hd)
         }
 
-        // No boot disk in any slot → sdl2trs hangs on a black screen
-        // waiting for a nonexistent floppy. -nofloppy drops to ROM BASIC.
-        if !anyDisk { args.append("-nofloppy") }
+        // No boot floppy → drop to ROM BASIC instead of hanging on a black
+        // screen. (Hard-disk-only boot still works via the emulator itself.)
+        if !anyFloppy && hards.allSatisfy({ $0.isEmpty }) {
+            args.append("-nofloppy")
+        }
 
         let proc = Process()
         let app = s.sdltrsPath
-
         if app.hasSuffix(".app") {
-            // Use macOS `open` to launch the bundle with args.
             proc.executableURL = URL(fileURLWithPath: "/usr/bin/open")
             proc.arguments = [app] + args
         } else {
-            // Direct binary (e.g. sdl2trs64): drop the leading "--args".
             proc.executableURL = URL(fileURLWithPath: app)
             proc.arguments = Array(args.dropFirst())
         }

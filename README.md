@@ -1,17 +1,21 @@
 # TRS-80 Launcher
 
-A small native macOS front-end for **sdltrs / sdl2trs** (Jens Günther's SDL2
-fork of SDLTRS, <https://gitlab.com/jengun/sdltrs>). It gives you a real Cocoa
-window with four drag-and-drop floppy slots, a model picker, and ROM / config /
-character-set controls, then launches the emulator underneath with the right
-command line.
+A native macOS front-end for **sdltrs / sdl2trs** (Jens Günther's SDL2 fork of
+SDLTRS, <https://gitlab.com/jengun/sdltrs>). It gives you a real Cocoa window
+with machine presets, four floppy slots, four hard-disk slots, and ROM /
+config / character-set controls, then launches the emulator underneath with
+the right command line.
 
 It is a **launcher**, not a new emulator. The running emulator window is still
 sdltrs. This fixes the disk-loading and configuration friction — not the
 in-emulator menus.
 
-Built for a Model I with the HRG1-B high-resolution graphics card. HRG1-B
+Originally built for a Model I with the HRG1-B high-resolution graphics card;
+now also covers Model III / 4 / 4P and the TCS Genie IIIs (which runs CP/M,
+G-DOS, and NEWDOS). HRG1-B
 emulation is automatic in Model I mode, so no extra flag is needed.
+
+**Version 1.1** · GPLv3 · © 2026 Egbert Schröer
 
 ---
 
@@ -19,13 +23,15 @@ emulation is automatic in Model I mode, so no extra flag is needed.
 
 ```
 TRS80Launcher/
-├── README.md          ← this file
-├── LICENSE            ← GNU GPL v3.0 (full text)
-├── build.sh           ← compiles the app
-├── Info.plist         ← app bundle metadata
+├── README.md           ← this file
+├── CHANGELOG.md        ← version history
+├── LICENSE             ← GNU GPL v3.0 (full text)
+├── build.sh            ← compiles the app
+├── update-sdltrs.sh    ← pulls + rebuilds the sdltrs emulator (optional)
+├── Info.plist          ← app bundle metadata
 ├── .gitignore
 └── Sources/
-    └── main.swift     ← the entire app (SwiftUI)
+    └── main.swift      ← the entire app (SwiftUI)
 ```
 
 > **Important layout note:** `main.swift` must live inside the `Sources/`
@@ -39,13 +45,14 @@ TRS80Launcher/
 
 - macOS 13 (Ventura) or newer
 - Xcode command-line tools (provides the `swiftc` compiler)
-- A working macOS build of **sdltrs** — download from
+- A working macOS build of **sdltrs** — from
   <https://gitlab.com/jengun/sdltrs>. You want the **macOS Unix executable**
-  (named `sdltrs` or `sdl2trs64`), *not* the `.exe` Windows file.
+  (named `sdltrs` or `sdl2trs64`), *not* the `.exe` Windows file. The included
+  `update-sdltrs.sh` can build it for you (see below).
 
 ---
 
-## Build it — step by step
+## Build the launcher — step by step
 
 Everything happens in the VS Code terminal (**Terminal → New Terminal**).
 
@@ -62,19 +69,13 @@ tools (click **Install** in the dialog, then wait):
 xcode-select --install
 ```
 
-If it replies *"Command line tools are already installed"*, you're done — that
-note means there's nothing to install.
+If it replies *"Command line tools are already installed"*, you're done.
 
 ### Step 1 — Open this folder
 
 In VS Code: **File → Open Folder →** select the project folder. Open a
-terminal; it will already point here. Confirm:
-
-```sh
-ls
-```
-
-You should see `build.sh`, `Info.plist`, `README.md`, and `Sources`.
+terminal; it will already point here. Confirm with `ls` that you see
+`build.sh`, `Info.plist`, `README.md`, and `Sources`.
 
 ### Step 2 — Build
 
@@ -83,11 +84,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-`chmod` makes the script runnable (needed only once). On success it prints:
-
-```
-Done. Launch with:  open TRS80Launcher.app
-```
+On success it prints `Done. Launch with:  open TRS80Launcher.app`.
 
 ### Step 3 — Run
 
@@ -103,27 +100,25 @@ If macOS blocks it (*"unidentified developer"*), right-click
 ## The `@main` build error (and the fix)
 
 Because the source file is named `main.swift`, Swift treats it as top-level
-code, which collides with the `@main` attribute. If you compile without the fix
-you get:
+code, which collides with the `@main` attribute:
 
 ```
 error: 'main' attribute cannot be used in a module that contains top-level code
 ```
 
-The fix is the `-parse-as-library` flag, which is **already included in
-`build.sh`**. If you ever compile by hand, use:
+The fix is the `-parse-as-library` flag, **already included in `build.sh`**.
+If you compile by hand, use:
 
 ```sh
 swiftc -O -parse-as-library -framework SwiftUI -framework AppKit \
   -o TRS80Launcher Sources/main.swift
 ```
 
-Then assemble the bundle (this is also what `build.sh` does):
+Then assemble the bundle (also what `build.sh` does):
 
 ```sh
 rm -rf TRS80Launcher.app
-mkdir -p TRS80Launcher.app/Contents/MacOS
-mkdir -p TRS80Launcher.app/Contents/Resources
+mkdir -p TRS80Launcher.app/Contents/MacOS TRS80Launcher.app/Contents/Resources
 cp Info.plist TRS80Launcher.app/Contents/Info.plist
 mv TRS80Launcher TRS80Launcher.app/Contents/MacOS/TRS80Launcher
 chmod +x TRS80Launcher.app/Contents/MacOS/TRS80Launcher
@@ -135,71 +130,111 @@ open TRS80Launcher.app
 
 ## Using the launcher
 
-1. **Locate sdltrs** — point this at your `sdltrs` (or `sdl2trs64`) binary. See
-   the next section if the file appears greyed out.
-2. **Model** — defaults to Model I (HRG1-B active automatically).
-3. **Floppy drives 0–3** — drag a `.dmk` / `.dsk` straight onto a slot, or use
-   the folder button. The eject button clears a slot. Drive numbering is
-   0-based.
-4. **Config (.t8c)** — optional. Passed as the first argument so it loads
-   before boot, preserving double-density and per-drive geometry.
-5. **ROM** — optional. For a standard Model I boot you usually don't need it; if
-   the emulator complains, pick your `LEVEL2.ROM`. Needed explicitly for
-   Genie / TCS / Schmidtke setups (e.g. `vg1-TCS-rom.bin`).
-6. **German / Genie character set** — adds `-charset1 genie`, useful for G-DOS
-   disks.
-7. **Boot** (or press Return) — launches the emulator.
+1. **Machine** — pick a preset (top-right): Model I · HRG1-B, Model III,
+   Model 4, Model 4P, or TCS Genie IIIs. The preset sets the model
+   number and, for the Genie IIIs, enables the German/Genie character set.
+   (The Genie IIIs runs CP/M, G-DOS, and NEWDOS — pick whichever the disk
+   you're booting uses.)
+2. **Locate sdltrs** — point this at your `sdltrs` (or `sdl2trs64`) binary.
+   See the next section if the file appears greyed out.
+3. **Floppy drives 0–3** — drag a `.dmk` / `.dsk` onto a slot, or use the
+   folder button. Maps to `-disk0`…`-disk3` (0-based).
+4. **Hard disks 0–3** — drag a `.hdv` onto a slot. Maps to `-hard0`…`-hard3`.
+   When a preset has a known geometry (e.g. the Genie IIIs at
+   2460 cyl · 4 heads · 9 sec) it's shown as a label; sdltrs reads the real
+   geometry from the `.hdv` itself.
+5. **Config (.t8c)** — optional. Passed first so it loads before boot,
+   preserving double-density and per-drive geometry.
+6. **ROM** — optional. For a standard Model I boot you usually don't need it;
+   if the emulator complains, pick your `LEVEL2.ROM`. Required for
+   Genie / TCS setups.
+7. **German / Genie character set** — adds `-charset1 genie`.
+8. **Boot** (or press Return).
 
 All settings persist between launches.
 
-> **No-floppy hang:** if no slot has a disk, the launcher adds `-nofloppy`
-> automatically so the emulator drops into ROM BASIC instead of hanging on a
-> black screen.
+> **No-floppy hang:** if **both** floppy and hard-disk slots are empty, the
+> launcher adds `-nofloppy` so the emulator drops into ROM BASIC instead of
+> hanging on a black screen. A hard-disk-only boot is not affected.
 
 ---
 
 ## If "Locate sdltrs" shows the binary greyed out
 
-A bare Unix executable can appear non-selectable in the file dialog. Three ways
-around it, easiest first:
+A bare Unix executable can appear non-selectable in the file dialog. Easiest
+fix first:
 
 **A. Set the path from the terminal (most reliable).** Find the binary's full
-path (in Finder, right-click it → hold **Option** → **Copy "sdltrs" as
+path (in Finder, right-click → hold **Option** → **Copy "sdltrs" as
 Pathname**), then:
 
 ```sh
 defaults write name.schroeer.trs80launcher sdltrsPath "/full/path/to/sdltrs"
 ```
 
-Quit the launcher (Cmd+Q) and reopen it; the field will show the binary.
-
-Example with a typical path:
+Quit the launcher (Cmd+Q) and reopen it. Example:
 
 ```sh
 defaults write name.schroeer.trs80launcher sdltrsPath \
   "/Users/egbert/Documents/GitHub/TRS80M1/sdltrs"
 ```
 
-**B. Go-to-folder in the dialog.** Click **Locate… → Cmd+Shift+G**, paste the
-full path, press Return, then Open.
+**B. Go-to-folder in the dialog.** Locate… → **Cmd+Shift+G**, paste the full
+path, Return, Open.
 
-**C. Rebuild with the loosened picker.** The current `main.swift` already
-removes the file-type filter, so a fresh `./build.sh` makes the binary directly
-clickable. (Older builds had `allowedContentTypes = [.application]`, which
-caused the grey-out.)
+**C. Rebuild.** The current `main.swift` already removes the file-type filter,
+so a fresh `./build.sh` makes the binary directly clickable.
+
+---
+
+## Keeping sdltrs up to date — `update-sdltrs.sh`
+
+An optional helper that pulls the latest sdltrs from GitLab and rebuilds it.
+It is **on-demand** (you run it; it is not a background job) and only rebuilds
+when the pull actually brings new commits.
+
+**One-time setup:**
+
+```sh
+brew install cmake sdl2
+```
+
+**Run:**
+
+```sh
+chmod +x update-sdltrs.sh
+./update-sdltrs.sh          # add --force to rebuild without changes
+```
+
+Edit the two paths at the top first:
+
+- `SRC_DIR` — where the emulator source is cloned (a **separate** folder; the
+  emulator's source never goes into this repo)
+- `INSTALL_DIR` — where the built binary lands (point your launcher here)
+
+> The script builds **sdltrs the emulator**, which is separate from this
+> launcher. Only the script lives in this repo; the cloned source stays
+> outside it. The exact build command may need a small tweak depending on the
+> repo's current build files — if the build errors, the output will say where.
 
 ---
 
 ## Command line it produces
 
-For Model I with a config, a ROM, and a disk in drive 0:
+Model I with a config, ROM, and a disk in drive 0:
 
 ```sh
 sdltrs sdltrsTRS80.t8c -model1 -rom LEVEL2.ROM -disk0 esnd-01.dmk
 ```
 
-With the Genie charset toggle on, `-charset1 genie` is added. For a `.app`
-target, the launcher prefixes `open … --args` automatically.
+Genie IIIs with two hard-disk volumes:
+
+```sh
+sdltrs -model3 -rom genie.rom -charset1 genie \
+  -hard0 g3s-hard21-f1.hdv -hard1 g3s-hard21-f2.hdv
+```
+
+For a `.app` target, the launcher prefixes `open … --args` automatically.
 
 ---
 
@@ -209,19 +244,22 @@ target, the launcher prefixes `open … --args` automatically.
   wrong place. `mkdir -p Sources && mv main.swift Sources/`.
 - **`'main' attribute cannot be used…`** — missing `-parse-as-library`; use
   `build.sh` or the hand-compile line above.
-- **sdltrs greyed out in Locate** — see the section above; the `defaults write`
-  route always works.
+- **sdltrs greyed out in Locate** — see the section above; `defaults write`
+  always works.
+- **`.onChange` deprecation warning (macOS 14+)** — harmless; the code uses
+  the form that compiles on both macOS 13 and 14+.
 - **HRG1-B graphics don't render** — emulator/config matter, not a launcher
   bug. Confirm Model I mode and that the disk drives the HRG1-B.
-- **`$BIN` empty when compiling by hand** — that variable only exists inside
-  `build.sh`. Use a literal output name: `-o TRS80Launcher`.
+- **`update-sdltrs.sh` build fails** — ensure `brew install cmake sdl2` ran;
+  the binary name/output path may differ between repo versions (the script
+  searches for it and reports if it can't find it).
 
 ---
 
 ## License
 
-This launcher is free software, licensed under the **GNU General Public
-License v3.0** — see the [`LICENSE`](LICENSE) file for the full text.
+This launcher is free software under the **GNU General Public License v3.0** —
+see [`LICENSE`](LICENSE) for the full text.
 
     TRS80Launcher — a native macOS front-end for sdltrs
     Copyright (C) 2026 Egbert Schröer
