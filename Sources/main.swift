@@ -186,6 +186,17 @@ struct ContentView: View {
 
     private var machine: Machine { s.machine }
 
+    // Reads sdltrs-version.txt sitting next to the binary (written by
+    // update-sdltrs.sh). Returns nil if absent.
+    private var sdltrsVersion: String? {
+        let dir = (s.sdltrsPath as NSString).deletingLastPathComponent
+        let vfile = (dir as NSString).appendingPathComponent("sdltrs-version.txt")
+        guard let text = try? String(contentsOfFile: vfile, encoding: .utf8)
+        else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -290,6 +301,13 @@ struct ContentView: View {
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .lineLimit(1).truncationMode(.middle)
+                if let v = sdltrsVersion {
+                    Text(v)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .opacity(0.7)
+                        .lineLimit(1)
+                }
                 Spacer()
                 Button("Locate…") { pickSdltrs() }
             }

@@ -125,6 +125,21 @@ DEST="$INSTALL_DIR/$(basename "$BIN")"
 cp "$BIN" "$DEST"
 chmod +x "$DEST"
 
+# Record the exact source version next to the binary so the launcher can
+# display it. Format: a short, human-readable string.
+cd "$SRC_DIR"
+GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GIT_DATE=$(git show -s --format=%cd --date=short HEAD 2>/dev/null || echo "")
+GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+VERSION_FILE="$INSTALL_DIR/sdltrs-version.txt"
+{
+    [ -n "$GIT_TAG" ] && printf "%s " "$GIT_TAG"
+    printf "(%s" "$GIT_HASH"
+    [ -n "$GIT_DATE" ] && printf ", %s" "$GIT_DATE"
+    printf ")\n"
+} > "$VERSION_FILE"
+
 say "Installed: $DEST"
+say "Version:   $(cat "$VERSION_FILE")"
 say "Point the launcher's 'Locate sdltrs' here if you haven't already."
 say "Done."
