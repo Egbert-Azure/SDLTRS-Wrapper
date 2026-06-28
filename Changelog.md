@@ -19,6 +19,7 @@ follows [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 - App version now shown in the window header.
 - `update-sdltrs.sh` — on-demand script to pull and rebuild sdltrs from
   GitLab and install the binary where the launcher expects it (GPLv3).
+  Verified building cleanly on Apple Silicon with Homebrew SDL2.
 
 ### Changed
 - `-nofloppy` is now appended only when both floppy and hard-disk slots are
