@@ -1,0 +1,11 @@
+# Build output
+TRS80Launcher.app/
+TRS80Launcher
+*.o
+
+# macOS cruft
+.DS_Store
+
+# Editor
+.vscode/
+*.swp
