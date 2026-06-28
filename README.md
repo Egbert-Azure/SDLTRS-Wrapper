@@ -2,7 +2,7 @@
 
 A native macOS front-end for **sdltrs / sdl2trs** (Jens Günther's SDL2 fork of
 SDLTRS, <https://gitlab.com/jengun/sdltrs>). It gives you a real Cocoa window
-with machine presets, four floppy slots, four hard-disk slots, and ROM /
+with machine presets, four floppy slots, two hard-disk slots, and ROM /
 config / character-set controls, then launches the emulator underneath with
 the right command line.
 
@@ -16,6 +16,8 @@ G-DOS, and NEWDOS). HRG1-B
 emulation is automatic in Model I mode, so no extra flag is needed.
 
 **Version 1.1** · GPLv3 · © 2026 Egbert Schröer
+
+![TRS-80 Launcher booting NEWDOS/80 under sdltrs](docs/screenshot.png)
 
 ---
 
