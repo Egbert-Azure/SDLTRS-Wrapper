@@ -9,7 +9,7 @@ APP="TRS80Launcher.app"
 BIN="TRS80Launcher"
 
 echo "Compiling…"
-swiftc -O -parse-as-library \
+swiftc -O \
     -framework SwiftUI -framework AppKit \
     -o "$BIN" \
     Sources/main.swift

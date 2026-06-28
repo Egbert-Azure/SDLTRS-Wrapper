@@ -176,7 +176,7 @@ Quit the launcher (Cmd+Q) and reopen it. Example:
 
 ```sh
 defaults write name.schroeer.trs80launcher sdltrsPath \
-  "/Users/egbert/Documents/GitHub/TRS80M1/sdltrs"
+  "$HOME/Documents/GitHub/TRS80M1/sdltrs"
 ```
 
 **B. Go-to-folder in the dialog.** Locate… → **Cmd+Shift+G**, paste the full
@@ -214,8 +214,10 @@ Edit the two paths at the top first:
 
 > The script builds **sdltrs the emulator**, which is separate from this
 > launcher. Only the script lives in this repo; the cloned source stays
-> outside it. The exact build command may need a small tweak depending on the
-> repo's current build files — if the build errors, the output will say where.
+> outside it. Verified working on Apple Silicon with Homebrew SDL2 (the build
+> includes hard-disk and Genie/clone support). If a future repo change moves
+> the binary or its output path, the script searches for it and reports if it
+> can't find it.
 
 ---
 
@@ -250,9 +252,10 @@ For a `.app` target, the launcher prefixes `open … --args` automatically.
   the form that compiles on both macOS 13 and 14+.
 - **HRG1-B graphics don't render** — emulator/config matter, not a launcher
   bug. Confirm Model I mode and that the disk drives the HRG1-B.
-- **`update-sdltrs.sh` build fails** — ensure `brew install cmake sdl2` ran;
-  the binary name/output path may differ between repo versions (the script
-  searches for it and reports if it can't find it).
+- **`update-sdltrs.sh` build fails** — almost always a missing dependency;
+  run `brew install cmake sdl2`. The build is otherwise verified working on
+  Apple Silicon; if a repo change relocates the binary, the script reports
+  that it couldn't find it.
 
 ---
 
