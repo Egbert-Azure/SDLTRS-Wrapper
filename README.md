@@ -136,7 +136,12 @@ open TRS80Launcher.app
    (The Genie IIIs runs CP/M, G-DOS, and NEWDOS — pick whichever the disk
    you're booting uses.)
 2. **Locate sdltrs** — point this at your `sdltrs` (or `sdl2trs64`) binary.
-   See the next section if the file appears greyed out.
+   See the next section if the file appears greyed out. If you built the
+   binary with `update-sdltrs.sh`, the installed source version (tag, commit
+   hash, and date — e.g. `1.2.35 (e699d607, 2026-06-19)`) is shown next to
+   the path. sdltrs has no `--version` flag, so this is read from a
+   `sdltrs-version.txt` the build script writes beside the binary; locate a
+   binary built another way and the version simply doesn't show.
 3. **Floppy drives 0–3** — drag a `.dmk` / `.dsk` onto a slot, or use the
    folder button. Maps to `-disk0`…`-disk3` (0-based).
 4. **Hard disks 0–3** — drag a `.hdv` onto a slot. Maps to `-hard0`…`-hard3`.
@@ -211,6 +216,12 @@ Edit the two paths at the top first:
 - `SRC_DIR` — where the emulator source is cloned (a **separate** folder; the
   emulator's source never goes into this repo)
 - `INSTALL_DIR` — where the built binary lands (point your launcher here)
+
+Alongside the binary the script writes `sdltrs-version.txt` (the tag, commit
+hash, and date of the source it built). The launcher reads this to show the
+installed sdltrs version next to its path. It also prints the version when it
+runs, and the commit hash lets you crosscheck against GitLab's master to
+confirm you're current.
 
 > The script builds **sdltrs the emulator**, which is separate from this
 > launcher. Only the script lives in this repo; the cloned source stays
