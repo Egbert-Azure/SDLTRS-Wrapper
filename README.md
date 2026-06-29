@@ -227,10 +227,11 @@ confirm you're current.
 
 > The script builds **sdltrs the emulator**, which is separate from this
 > launcher. Only the script lives in this repo; the cloned source stays
-> outside it. Verified working on Apple Silicon with Homebrew SDL2 (the build
-> includes hard-disk and Genie/clone support). If a future repo change moves
-> the binary or its output path, the script searches for it and reports if it
-> can't find it.
+> outside it. It builds the **`sdl2` branch** (Jens Günther's recommendation):
+> hardware/texture rendering and a mouse-resizable window, versus the master
+> branch's software renderer and fixed window. The resulting binary is named
+> **`sdl2trs`**. Verified working on Apple Silicon with Homebrew SDL2 (the
+> build includes hard-disk and Genie/clone support).
 
 ---
 

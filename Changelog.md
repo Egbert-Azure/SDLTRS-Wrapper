@@ -22,7 +22,9 @@ follows [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
   (the source commit hash + date, since sdltrs has no `--version` flag).
 - `update-sdltrs.sh` — on-demand script to pull and rebuild sdltrs from
   GitLab and install the binary where the launcher expects it (GPLv3).
-  Verified building cleanly on Apple Silicon with Homebrew SDL2.
+  Verified building cleanly on Apple Silicon with Homebrew SDL2. Builds the
+  `sdl2` branch (hardware rendering, resizable window; binary `sdl2trs`)
+  per Jens Günther's recommendation.
 
 ### Changed
 - `-nofloppy` is now appended only when both floppy and hard-disk slots are
