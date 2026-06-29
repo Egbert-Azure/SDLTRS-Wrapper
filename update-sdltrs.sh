@@ -69,15 +69,23 @@ command -v cmake >/dev/null 2>&1 || die "cmake not found. Run: brew install cmak
 
 # ── Clone or update ─────────────────────────────────────────────────────────
 
+# Build the SDL2 branch, NOT master. Per Jens Günther: the sdl2 branch has
+# hardware (texture) rendering and a mouse-resizable window; master uses the
+# software renderer and a fixed window size. The binary on this branch is
+# named "sdl2trs".
+BRANCH="sdl2"
+
 NEED_BUILD=0
 
 if [ ! -d "$SRC_DIR/.git" ]; then
-    say "First run — cloning sdltrs into $SRC_DIR"
-    git clone "$REPO" "$SRC_DIR"
+    say "First run — cloning sdltrs ($BRANCH branch) into $SRC_DIR"
+    git clone --branch "$BRANCH" "$REPO" "$SRC_DIR"
     NEED_BUILD=1
 else
-    say "Checking for updates…"
+    say "Checking for updates on $BRANCH branch…"
     cd "$SRC_DIR"
+    # Make sure we're on the sdl2 branch even if an earlier run used master.
+    git checkout "$BRANCH" 2>/dev/null || die "Could not switch to $BRANCH branch."
     BEFORE=$(git rev-parse HEAD)
     git pull --ff-only
     AFTER=$(git rev-parse HEAD)
