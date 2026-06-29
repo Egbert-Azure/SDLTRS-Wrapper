@@ -10,9 +10,9 @@ It is a **launcher**, not a new emulator. The running emulator window is still
 sdltrs. This fixes the disk-loading and configuration friction — not the
 in-emulator menus.
 
-Originally built for a Model I with the HRG1-B high-resolution graphics card;
+Originally built for a Model I with the HRG-1B high-resolution graphics card;
 now also covers Model III / 4 / 4P and the TCS Genie IIIs (which runs CP/M,
-G-DOS, and NEWDOS). HRG1-B
+G-DOS, and NEWDOS). HRG-1B
 emulation is automatic in Model I mode, so no extra flag is needed.
 
 **Version 1.1** · GPLv3 · © 2026 Egbert Schröer
@@ -132,7 +132,7 @@ open TRS80Launcher.app
 
 ## Using the launcher
 
-1. **Machine** — pick a preset (top-right): Model I · HRG1-B, Model III,
+1. **Machine** — pick a preset (top-right): Model I · HRG-1B, Model III,
    Model 4, Model 4P, or TCS Genie IIIs. The preset sets the model
    number and, for the Genie IIIs, enables the German/Genie character set.
    (The Genie IIIs runs CP/M, G-DOS, and NEWDOS — pick whichever the disk
@@ -264,8 +264,8 @@ For a `.app` target, the launcher prefixes `open … --args` automatically.
   always works.
 - **`.onChange` deprecation warning (macOS 14+)** — harmless; the code uses
   the form that compiles on both macOS 13 and 14+.
-- **HRG1-B graphics don't render** — emulator/config matter, not a launcher
-  bug. Confirm Model I mode and that the disk drives the HRG1-B.
+- **HRG-1B graphics don't render** — emulator/config matter, not a launcher
+  bug. Confirm Model I mode and that the disk drives the HRG-1B.
 - **`update-sdltrs.sh` build fails** — almost always a missing dependency;
   run `brew install cmake sdl2`. The build is otherwise verified working on
   Apple Silicon; if a repo change relocates the binary, the script reports

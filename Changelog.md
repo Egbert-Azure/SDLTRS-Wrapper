@@ -6,7 +6,7 @@ follows [Semantic Versioning](https://semver.org/): MAJOR.MINOR.PATCH.
 ## [1.1] — 2026
 
 ### Added
-- Machine presets: Model I · HRG1-B, Model III, Model 4, Model 4P, and
+- Machine presets: Model I · HRG-1B, Model III, Model 4, Model 4P, and
   TCS Genie IIIs. Selecting a preset sets the model and, for the
   Genie IIIs, enables the German/Genie character set automatically.
   (The Genie IIIs runs CP/M, G-DOS, and NEWDOS — the OS is whichever
