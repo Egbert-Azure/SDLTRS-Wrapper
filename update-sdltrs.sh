@@ -1,6 +1,6 @@
 #!/bin/bash
 # update-sdltrs.sh — pull the latest sdltrs from GitLab and (re)build it.
-# Version 1.0
+# Version 1.1
 #
 # Copyright (C) 2026 Egbert Schröer
 #
@@ -40,7 +40,7 @@
 
 set -e
 
-SCRIPT_VERSION="1.0"
+SCRIPT_VERSION="1.1"
 
 # ── Configuration ───────────────────────────────────────────────────────────
 
@@ -78,8 +78,14 @@ BRANCH="sdl2"
 NEED_BUILD=0
 
 if [ ! -d "$SRC_DIR/.git" ]; then
-    say "First run — cloning sdltrs ($BRANCH branch) into $SRC_DIR"
-    git clone --branch "$BRANCH" "$REPO" "$SRC_DIR"
+    say "First run — cloning sdltrs ($BRANCH branch, shallow) into $SRC_DIR"
+    # --depth 1 fetches only the latest commit, not the full history. The repo
+    # carries large binary blobs (packages, .exe files) in its history; a full
+    # clone is ~100 MB, a shallow clone ~1 MB. We only need the source to build.
+    git clone --depth 1 --branch "$BRANCH" "$REPO" "$SRC_DIR"
+    cd "$SRC_DIR"
+    # Fetch tag refs too (tiny) so the version string can show e.g. 1.2.7.
+    git fetch --depth 1 origin --tags 2>/dev/null || true
     NEED_BUILD=1
 else
     say "Checking for updates on $BRANCH branch…"
@@ -87,7 +93,10 @@ else
     # Make sure we're on the sdl2 branch even if an earlier run used master.
     git checkout "$BRANCH" 2>/dev/null || die "Could not switch to $BRANCH branch."
     BEFORE=$(git rev-parse HEAD)
-    git pull --ff-only
+    # Shallow fetch (depth 1) keeps updates ~1 MB even on a shallow clone.
+    git fetch --depth 1 origin "$BRANCH"
+    git fetch --depth 1 origin --tags 2>/dev/null || true
+    git reset --hard "origin/$BRANCH"
     AFTER=$(git rev-parse HEAD)
     if [ "$BEFORE" != "$AFTER" ]; then
         say "New version pulled ($BEFORE → $AFTER)."
@@ -138,7 +147,11 @@ chmod +x "$DEST"
 cd "$SRC_DIR"
 GIT_HASH=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 GIT_DATE=$(git show -s --format=%cd --date=short HEAD 2>/dev/null || echo "")
-GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+# Tag detection that works on a shallow clone: first try a tag pointing exactly
+# at HEAD, then fall back to `git describe` (needs history, may be empty when
+# shallow). Either way the hash + date below always work.
+GIT_TAG=$(git tag --points-at HEAD 2>/dev/null | head -n1)
+[ -z "$GIT_TAG" ] && GIT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 VERSION_FILE="$INSTALL_DIR/sdltrs-version.txt"
 {
     [ -n "$GIT_TAG" ] && printf "%s " "$GIT_TAG"

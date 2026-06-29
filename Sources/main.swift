@@ -48,7 +48,7 @@ struct Machine: Identifiable, Hashable {
     let geometry: String?   // e.g. "2460 cyl · 4 heads · 9 sec", or nil
 
     static let all: [Machine] = [
-        Machine(id: "model1",  label: "Model I · HRG1-B",
+        Machine(id: "model1",  label: "Model I · HRG-1B",
                 model: 1, usesGenieCharset: false, geometry: nil),
         Machine(id: "model3",  label: "Model III",
                 model: 3, usesGenieCharset: false, geometry: nil),
