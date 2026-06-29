@@ -1,11 +1,38 @@
-# Build output
+# ── Build output ─────────────────────────────────────────────
 TRS80Launcher.app/
 TRS80Launcher
 *.o
+*.dSYM/
 
-# macOS cruft
+# ── Emulator artifacts (must NOT be in the launcher repo) ─────
+# Binaries belong in your emulator folder, not here.
+sdltrs
+sdl2trs
+sdl2trs64
+sdltrs-version.txt
+sdltrs-src/
+
+# ── Disk images & media — NEVER upload to GitHub ─────────────
+# These are preservation artifacts; keep them in your archive,
+# not in this code repo.
+*.dmk
+*.dsk
+*.DSK
+*.DMK
+*.jv1
+*.jv3
+*.hdv
+*.hdr
+*.cmd
+*.cas
+*.wav
+*.rom
+*.ROM
+*.bin
+
+# ── macOS cruft ──────────────────────────────────────────────
 .DS_Store
 
-# Editor
+# ── Editor ───────────────────────────────────────────────────
 .vscode/
 *.swp
