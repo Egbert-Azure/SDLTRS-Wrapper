@@ -286,6 +286,11 @@ see [`LICENSE`](LICENSE) for the full text.
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-sdltrs itself is separate software under its own BSD 2-Clause license by
-Jens Günther; this launcher only invokes it and does not include its code.
-(BSD-2-Clause is GPL-compatible, so there is no conflict.)
+sdltrs / sdl2trs — the emulator this launcher drives — is separate software,
+written and continually improved by **Jens Günther**
+(<https://gitlab.com/jengun/sdltrs>), released under its own BSD 2-Clause
+license. This launcher only invokes the binary and does not include any of
+its code. (BSD-2-Clause is GPL-compatible, so there's no license conflict.)
+
+Huge thanks to Jens for the years of care and effort he's put into sdltrs —
+this launcher would have nothing to launch without it.
