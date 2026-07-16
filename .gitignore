@@ -11,6 +11,7 @@ sdl2trs
 sdl2trs64
 sdltrs-version.txt
 sdltrs-src/
+update-sdltrs.local.sh
 
 # ── Disk images & media — NEVER upload to GitHub ─────────────
 # These are preservation artifacts; keep them in your archive,

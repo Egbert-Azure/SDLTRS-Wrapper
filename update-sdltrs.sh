@@ -43,13 +43,22 @@ set -e
 SCRIPT_VERSION="1.1"
 
 # ── Configuration ───────────────────────────────────────────────────────────
+#
+# Generic defaults below are safe to share/commit. For your real paths,
+# create a gitignored "update-sdltrs.local.sh" next to this script — it's
+# sourced automatically if present, e.g.:
+#   SRC_DIR="$HOME/Documents/GitHub/sdltrs-src"
+#   INSTALL_DIR="$HOME/Documents/GitHub/your-sdltrs-folder"
 
 # Where the sdltrs source lives (its own folder, separate from the launcher).
-SRC_DIR="$HOME/sdltrs-src"
+SRC_DIR="${SRC_DIR:-$HOME/sdltrs-src}"
 
 # Where to put the finished binary — the folder your launcher's Locate points
-# at. Default matches the sdltrs-bin layout seen in this project.
-INSTALL_DIR="$HOME/sdltrs-bin"
+# at.
+INSTALL_DIR="${INSTALL_DIR:-$HOME/sdltrs-bin}"
+
+LOCAL_CONF="$(cd "$(dirname "$0")" && pwd)/update-sdltrs.local.sh"
+[ -f "$LOCAL_CONF" ] && source "$LOCAL_CONF"
 
 # GitLab repository (Jens Günther's actively-maintained SDL2 fork).
 REPO="https://gitlab.com/jengun/sdltrs.git"
