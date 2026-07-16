@@ -292,5 +292,6 @@ written and continually improved by **Jens Günther**
 license. This launcher only invokes the binary and does not include any of
 its code. (BSD-2-Clause is GPL-compatible, so there's no license conflict.)
 
-Huge thanks to Jens for the years of care and effort he's put into sdltrs —
-this launcher would have nothing to launch without it.
+> [!TIP]
+> **Huge thanks to Jens** for the years of care and effort he's put into
+> sdltrs — this launcher would have nothing to launch without it.
