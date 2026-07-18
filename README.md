@@ -279,7 +279,7 @@ This launcher is free software under the **GNU General Public License v3.0** —
 see [`LICENSE`](LICENSE) for the full text.
 
     TRS80Launcher — a native macOS front-end for sdltrs
-    Copyright (C) 2026 Egbert Schröer
+    Copyright (C) 2026 Egbert Schroeer
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
