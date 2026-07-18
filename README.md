@@ -49,7 +49,7 @@ TRS80Launcher/
 - Xcode command-line tools (provides the `swiftc` compiler)
 - A working macOS build of **sdltrs** — from
   <https://gitlab.com/jengun/sdltrs>. You want the **macOS Unix executable**
-  (named `sdltrs` or `sdl2trs64`), *not* the `.exe` Windows file. The included
+  (named `sdl2trs`), *not* the `.exe` Windows file. The included
   `update-sdltrs.sh` can build it for you (see below).
 
 ---
